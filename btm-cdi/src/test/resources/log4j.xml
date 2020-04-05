@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration PUBLIC "-//APACHE//DTD LOG4J 1.2//EN"
+        "http://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/xml/doc-files/log4j.dtd">
+<log4j:configuration>
+    <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d %-5p %X{host} (%X{correlationId}: [%X{clientName} %X{clientVersion} %X{clientApiVersion}] %X{extSubscriberID} %X{providerShortName}) [%c] (%t) %m%n"/>
+        </layout>
+    </appender>
+    <appender name="FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="test.log"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d %-5p %X{host} (%X{correlationId}: [%X{clientName} %X{clientVersion} %X{clientApiVersion}] %X{extSubscriberID} %X{providerShortName}) [%c] (%t) %m%n"/>
+        </layout>
+    </appender>
+    <category name="bitronix.tm">
+        <priority value="INFO"/>
+    </category>
+    <category name="org.hibernate.ejb.packaging">
+        <priority value="ERROR"/>
+    </category>
+    <category name="org.hibernate.orm.url">
+        <priority value="ERROR"/>
+    </category>
+    <root>
+        <level value="info"/>
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+</log4j:configuration>

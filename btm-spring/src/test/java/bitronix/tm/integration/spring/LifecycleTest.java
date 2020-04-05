@@ -46,7 +46,7 @@ public class LifecycleTest {
             // make sure that a refresh closes all connections
             int totalPoolSize = getTotalPoolSize(applicationContext);
             assertEquals(3, totalPoolSize);
-            
+
             applicationContext.refresh();
             
             verifyConnectionsClosed(totalPoolSize);
@@ -66,7 +66,8 @@ public class LifecycleTest {
     private int getTotalPoolSize(ApplicationContext applicationContext) {
         int totalPoolSize = 0;
         for (PoolingDataSource ds : applicationContext.getBeansOfType(PoolingDataSource.class).values()) {
-            totalPoolSize += ds.getTotalPoolSize();
+            if (!ds.getAllowLocalTransactions())
+                totalPoolSize += ds.getTotalPoolSize();
         }
         return totalPoolSize;
     }

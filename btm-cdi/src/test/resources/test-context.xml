@@ -1,0 +1,39 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+       ">
+       
+    <context:annotation-config/>
+       
+	<bean id="dataSource1" class="bitronix.tm.integration.cdi.PoolingDataSourceFactoryBean" primary="true">
+		<property name="className" value="bitronix.tm.mock.resource.jdbc.MockitoXADataSource" />
+		<property name="uniqueName" value="btm-spring-test-ds1" />
+		<property name="minPoolSize" value="1" />
+		<property name="maxPoolSize" value="10" />
+	</bean>
+
+	<bean id="dataSource2" class="bitronix.tm.integration.cdi.PoolingDataSourceFactoryBean" primary="false">
+		<property name="className" value="bitronix.tm.mock.resource.jdbc.MockitoXADataSource" />
+		<property name="uniqueName" value="btm-spring-test-ds2" />
+		<property name="minPoolSize" value="1" />
+		<property name="maxPoolSize" value="2" />
+		<property name="automaticEnlistingEnabled" value="true" />
+		<property name="useTmJoin" value="false" />
+		<property name="driverProperties">
+			<props>
+				<prop key="loginTimeout">5</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="transactionManager" class="bitronix.tm.integration.cdi.PlatformTransactionManager"/>
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+
+	<bean class="bitronix.tm.integration.cdi.nonintercepted.TransactionalBean"/>
+
+</beans>

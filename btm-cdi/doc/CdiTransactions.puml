@@ -1,0 +1,98 @@
+@startuml
+
+actor client as c
+participant TransactionalBean as s
+participant TInterceptor as ti
+participant TFrameStack as ts
+participant TransactionInfo as tif
+participant emdelegate as emd
+participant tm
+participant em
+participant pfactory as pf
+participant query1 as q1
+participant query2 as q2
+
+c -> s: call
+activate s
+s -> ti: manageTransaction
+activate ti
+ti -> ts: pushTra(attribute)
+create tif
+ts -> tif: new
+ts -> tm: begin
+tm --> ts: ok
+ts --> ti: ok
+ti -> s: invoke
+activate s
+s -> emd: createQuery
+activate emd
+emd -> pf: getTransactional
+activate pf
+pf -> ts: getEntityManager(this)
+activate ts
+ts -> ts: searchEmInTopTInfo
+ts -> pf: createEntityManager
+create em
+pf -> em: new
+pf --> ts: em
+ts -> em: joinTransaction
+ts -> tif: register(em)
+ts --> pf: ok
+deactivate ts
+pf --> emd: em
+deactivate pf
+emd -> em: createQuery
+create q1
+em -> q1: createQuery
+em --> emd: q1
+emd --> s: q1
+deactivate emd
+s -> q1: execute
+activate q1
+q1 --> s: results
+deactivate q1
+destroy q1
+s -> emd: createQuery
+activate emd
+emd -> pf: getTransactional
+activate pf
+pf -> ts: getEntityManager(this)
+activate ts
+ts -> ts: searchEmInTopTInfo
+ts --> pf: em
+deactivate ts
+pf --> emd: em
+deactivate pf
+emd -> em: createQuery
+create q2
+em -> q2: createQuery
+em --> emd: q2
+emd --> s: q2
+deactivate emd
+s -> q2: execute
+activate q2
+q2 --> s: results
+deactivate q2
+destroy q2
+s --> ti: return
+deactivate s
+activate ti
+ti -> ts: popTra
+activate ts
+ts -> tm: commit
+tm -> em: flush
+em --> tm: ok
+tm --> ts: ok
+ts -> em: close
+em --> ts: ok
+destroy em
+ts --> tif: close
+destroy tif
+ts --> ti: ok
+deactivate ts
+deactivate ti
+ti --> s: return from intercept
+deactivate ti
+s --> c: return
+deactivate s
+@enduml

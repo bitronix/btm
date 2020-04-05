@@ -31,9 +31,46 @@
 		</property>
 	</bean>
 
+	<bean id="h2DataSource" class="bitronix.tm.integration.spring.PoolingDataSourceFactoryBean" primary="false">
+		<property name="className" value="org.h2.jdbcx.JdbcDataSource" />
+		<property name="uniqueName" value="jdbc/btm-spring-test-h2" />
+		<property name="minPoolSize" value="1" />
+		<property name="maxPoolSize" value="2" />
+		<property name="automaticEnlistingEnabled" value="true" />
+		<property name="allowLocalTransactions" value="true"/>
+		<property name="useTmJoin" value="true" />
+		<property name="driverProperties">
+			<props>
+				<prop key="URL">jdbc:h2:mem:test;MODE=MySQL;DB_CLOSE_DELAY=0</prop>
+				<prop key="user">sa</prop>
+				<prop key="password"></prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="myEmf" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean" depends-on="h2DataSource">
+		<property name="persistenceUnitName" value="btm-cdi-test-h2-pu"/>
+		<property name="dataSource" ref="h2DataSource"/>
+		<property name="persistenceProviderClass" value="org.hibernate.ejb.HibernatePersistence"></property>
+		<property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
+		<property name="jpaPropertyMap">
+			<props>
+				<prop key="hibernate.hbm2ddl.auto">create-drop</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+		<property name="showSql" value="false"/>
+		<property name="generateDdl" value="false"/>
+		<property name="databasePlatform" value="org.hibernate.dialect.MySQL5InnoDBDialect"/>
+	</bean>
+
 	<bean id="transactionManager" class="bitronix.tm.integration.spring.PlatformTransactionManager"/>
 	<tx:annotation-driven transaction-manager="transactionManager"/>
 
 	<bean class="bitronix.tm.integration.spring.TransactionalBean"/>
+
+	<bean class="bitronix.tm.integration.spring.TransactionalJPABean"/>
 
 </beans>

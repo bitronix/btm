@@ -1,60 +1,74 @@
-package bitronix.tm.integration.spring;
+package bitronix.tm.integration.cdi.cdiintercepted;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Iterator;
 
 import javax.annotation.Resource;
+import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.sql.DataSource;
+import javax.transaction.TransactionManager;
+import javax.transaction.Transactional;
 import javax.transaction.xa.XAResource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.annotation.Transactional;
 
+import bitronix.tm.integration.cdi.entities.TestEntity1;
 import bitronix.tm.mock.events.EventRecorder;
 import bitronix.tm.mock.events.XAResourceCommitEvent;
 import bitronix.tm.mock.events.XAResourceEndEvent;
 import bitronix.tm.mock.events.XAResourcePrepareEvent;
 import bitronix.tm.mock.events.XAResourceStartEvent;
 
-public class TransactionalBean {
+@Transactional
+public class CDITransactionalJPABean {
     
-    private static final Logger log = LoggerFactory.getLogger(TransactionalBean.class);
-    
-    @Resource(name = "dataSource1")
+    private static final Logger log = LoggerFactory.getLogger(CDITransactionalJPABean.class);
+
+    @Resource(name = "h2DataSource")
     private DataSource dataSource;
 
-    @Transactional
-    public void doSomethingTransactional(int count) throws SQLException {
-        log.info("From transactional method, claiming {} connection(s)", count);
+    @Inject
+    TransactionManager tm;
 
-        Connection[] connections = new Connection[count];
-        try {
-            for (int i = 0; i < count; i++) {
-                connections[i] = dataSource.getConnection();
-                connections[i].createStatement();
-            }
-        } finally {
-            for (int i = 0; i < count; i++) {
-                if (connections[i] != null) {
-                    connections[i].close();
-                }
-            }
-        }
+    @Inject
+    EntityManager em;
+
+
+    @Transactional(value = Transactional.TxType.REQUIRES_NEW)
+    public void insertTestEntityInNewTra() throws Exception {
+        em.persist(new TestEntity1());
+    }
+
+    @Transactional(value = Transactional.TxType.REQUIRES_NEW)
+    public void insertTestEntityInNewTraAndSetRollbackOnly() throws Exception {
+        em.persist(new TestEntity1());
+        tm.setRollbackOnly();
+    }
+
+    @Transactional(value = Transactional.TxType.REQUIRED)
+    public void insertTestEntityInRequired() throws Exception {
+        em.persist(new TestEntity1());
+    }
+
+    public long countTestEntity() throws Exception {
+        Long result = em.createQuery("select count(e) from TestEntity1 e", Long.class).getSingleResult();
+        return result;
     }
 
     public void verifyEvents(int count) {
         if (log.isDebugEnabled()) {
             log.debug(EventRecorder.dumpToString());
         }
-        
+
         Iterator<?> it = EventRecorder.iterateEvents();
-        
+
         for (int i = 0; i < count; i++) {
             assertEquals(XAResource.TMNOFLAGS, ((XAResourceStartEvent) it.next()).getFlag());
         }
@@ -69,7 +83,7 @@ public class TransactionalBean {
         for (int i = 0; i < count; i++) {
             assertEquals(count == 1, ((XAResourceCommitEvent) it.next()).isOnePhase());
         }
-        
+
         assertFalse(it.hasNext());
     }
 }
